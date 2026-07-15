@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IronForge — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --black:#0A0A0A;--steel:#1C1C1C;--red:#E8002D;--red-dark:#B5001E;
+      --white:#F0EDE8;--gray:#888;--light-gray:#2A2A2A;--green:#22c55e;
+    }
+    body{background:var(--black);color:var(--white);font-family:'Inter',sans-serif;min-height:100vh}
+
+    /* ── TOP BAR ── */
+    header{
+      background:var(--steel);border-bottom:2px solid var(--red);
+      padding:16px 32px;display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;z-index:50;
+    }
+    .logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px}
+    .logo span{color:var(--red)}
+    .admin-badge{
+      font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;
+      background:rgba(232,0,45,0.15);border:1px solid rgba(232,0,45,0.4);
+      color:var(--red);padding:4px 12px;margin-left:14px;
+    }
+    .header-right{display:flex;align-items:center;gap:16px}
+    .status-dot{
+      width:8px;height:8px;border-radius:50%;background:var(--green);
+      box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;
+    }
+    .status-text{font-size:0.72rem;color:var(--gray);letter-spacing:1px}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+    /* ── LAYOUT ── */
+    main{max-width:1400px;margin:0 auto;padding:36px 32px}
+
+    /* ── STAT CARDS ── */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2px;margin-bottom:40px}
+    .stat-card{
+      background:var(--steel);padding:28px 24px;position:relative;overflow:hidden;
+      border-top:2px solid transparent;transition:border-color 0.2s;
+    }
+    .stat-card:hover{border-top-color:var(--red)}
+    .stat-card::before{
+      content:'';position:absolute;bottom:0;right:0;width:60px;height:60px;
+      background:radial-gradient(circle,rgba(232,0,45,0.08) 0%,transparent 70%);
+    }
+    .stat-label{font-size:0.62rem;letter-spacing:3px;text-transform:uppercase;color:var(--gray);margin-bottom:10px}
+    .stat-value{font-family:'Bebas Neue',sans-serif;font-size:3rem;line-height:1;color:var(--white)}
+    .stat-value.accent{color:var(--red)}
+    .stat-sub{font-size:0.7rem;color:var(--gray);margin-top:4px}
+
+    /* ── SECTION TITLES ── */
+    .section-title{
+      font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;
+      margin-bottom:20px;display:flex;align-items:center;gap:14px;
+    }
+    .section-title::before{content:'';width:24px;height:2px;background:var(--red);display:block}
+
+    /* ── TOOLBAR ── */
+    .toolbar{
+      display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;
+    }
+    .search-input{
+      background:var(--steel);border:1px solid #333;color:var(--white);
+      font-family:'Inter',sans-serif;font-size:0.85rem;padding:10px 16px;
+      flex:1;min-width:200px;outline:none;clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+      transition:border-color 0.2s;
+    }
+    .search-input:focus{border-color:var(--red)}
+    .search-input::placeholder{color:var(--gray)}
+    .filter-select{
+      background:var(--steel);border:1px solid #333;color:var(--white);
+      font-family:'Inter',sans-serif;font-size:0.82rem;padding:10px 14px;
+      outline:none;cursor:pointer;
+      clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+    }
+    .filter-select option{background:var(--steel)}
+    .btn-refresh{
+      background:transparent;border:1px solid #333;color:var(--gray);
+      font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;
+      padding:10px 20px;cursor:pointer;transition:all 0.2s;
+      clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);
+    }
+    .btn-refresh:hover{border-color:var(--red);color:var(--white)}
+    .record-count{font-size:0.72rem;color:var(--gray);letter-spacing:1px;margin-left:auto}
+
+    /* ── TABLE ── */
+    .table-wrap{overflow-x:auto;margin-bottom:24px}
+    table{width:100%;border-collapse:separate;border-spacing:0 2px;min-width:900px}
+    thead tr th{
+      background:var(--light-gray);padding:12px 16px;text-align:left;
+      font-size:0.62rem;letter-spacing:3px;text-transform:uppercase;color:var(--gray);
+      font-weight:600;white-space:nowrap;
+    }
+    thead tr th:first-child{padding-left:20px}
+    tbody tr{background:var(--steel);transition:background 0.15s}
+    tbody tr:hover{background:#252525}
+    tbody td{padding:14px 16px;font-size:0.85rem;border:none;vertical-align:middle}
+    tbody td:first-child{padding-left:20px;font-weight:600;color:var(--gray);font-size:0.75rem}
+    .name-cell{font-weight:600;color:var(--white)}
+    .email-cell{color:var(--gray);font-size:0.82rem}
+    .plan-chip{
+      display:inline-block;font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;
+      padding:4px 10px;border:1px solid;
+      clip-path:polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%);
+    }
+    .plan-chip.starter{color:#60a5fa;border-color:rgba(96,165,250,0.4)}
+    .plan-chip.performance{color:var(--red);border-color:rgba(232,0,45,0.4)}
+    .plan-chip.elite{color:#a78bfa;border-color:rgba(167,139,250,0.4)}
+    .date-cell{color:var(--gray);font-size:0.78rem;white-space:nowrap}
+    .btn-delete{
+      background:transparent;border:1px solid #333;color:var(--gray);
+      font-size:0.7rem;padding:5px 12px;cursor:pointer;transition:all 0.2s;
+      clip-path:polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%);
+      letter-spacing:1px;
+    }
+    .btn-delete:hover{background:rgba(232,0,45,0.15);border-color:var(--red);color:var(--red)}
+    .empty-row td{text-align:center;padding:48px;color:var(--gray);font-size:0.9rem}
+
+    /* ── PAGINATION ── */
+    .pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:24px}
+    .page-btn{
+      background:var(--steel);border:1px solid #333;color:var(--gray);
+      font-size:0.78rem;padding:8px 14px;cursor:pointer;transition:all 0.2s;
+      clip-path:polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%);
+    }
+    .page-btn:hover:not(:disabled){border-color:var(--red);color:var(--white)}
+    .page-btn.active{background:var(--red);border-color:var(--red);color:var(--white)}
+    .page-btn:disabled{opacity:0.3;cursor:default}
+    .page-info{font-size:0.72rem;color:var(--gray);padding:0 8px}
+
+    /* ── GOALS BAR CHART ── */
+    .goals-section{margin-top:40px}
+    .goals-grid{display:grid;gap:10px}
+    .goal-row{display:flex;align-items:center;gap:14px}
+    .goal-label{font-size:0.78rem;color:var(--gray);width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .goal-bar-wrap{flex:1;background:var(--light-gray);height:10px;clip-path:polygon(2px 0%,100% 0%,calc(100% - 2px) 100%,0% 100%)}
+    .goal-bar{height:100%;background:var(--red);transition:width 0.8s ease}
+    .goal-count{font-size:0.78rem;color:var(--white);font-weight:600;width:28px;text-align:right}
+
+    /* ── LOADER ── */
+    .loader{display:none;position:fixed;inset:0;background:rgba(10,10,10,0.6);z-index:200;align-items:center;justify-content:center}
+    .loader.show{display:flex}
+    .spinner{width:40px;height:40px;border:3px solid #333;border-top-color:var(--red);border-radius:50%;animation:spin 0.7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ── TOAST ── */
+    .toast{
+      position:fixed;bottom:32px;right:32px;z-index:300;
+      background:var(--steel);border-left:3px solid var(--green);
+      padding:14px 20px;font-size:0.85rem;
+      clip-path:polygon(0 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%);
+      transform:translateX(120%);transition:transform 0.3s ease;max-width:320px;
+    }
+    .toast.error{border-left-color:var(--red)}
+    .toast.show{transform:translateX(0)}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:768px){
+      main{padding:24px 16px}
+      header{padding:14px 16px}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center">
+    <div class="logo">IRON<span>FORGE</span></div>
+    <span class="admin-badge">Admin Panel</span>
+  </div>
+  <div class="header-right">
+    <div class="status-dot"></div>
+    <span class="status-text">Live</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- STAT CARDS -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="stat-label">Total Signups</div><div class="stat-value accent" id="sTotal">—</div></div>
+    <div class="stat-card"><div class="stat-label">Today</div><div class="stat-value" id="sToday">—</div><div class="stat-sub">new members</div></div>
+    <div class="stat-card"><div class="stat-label">Last 7 Days</div><div class="stat-value" id="s7d">—</div></div>
+    <div class="stat-card"><div class="stat-label">Last 30 Days</div><div class="stat-value" id="s30d">—</div></div>
+    <div class="stat-card"><div class="stat-label">Starter Plan</div><div class="stat-value" id="sPlanS">—</div></div>
+    <div class="stat-card"><div class="stat-label">Performance Plan</div><div class="stat-value" id="sPlanP">—</div></div>
+    <div class="stat-card"><div class="stat-label">Elite Plan</div><div class="stat-value" id="sPlanE">—</div></div>
+  </div>
+
+  <!-- MEMBERS TABLE -->
+  <div class="section-title">All Signups</div>
+
+  <div class="toolbar">
+    <input class="search-input" type="text" id="searchInput" placeholder="Search name or email…"/>
+    <select class="filter-select" id="planFilter">
+      <option value="">All Plans</option>
+      <option value="Starter – $39/mo">Starter</option>
+      <option value="Performance – $79/mo">Performance</option>
+      <option value="Elite – $149/mo">Elite</option>
+    </select>
+    <button class="btn-refresh" id="btnRefresh">↻ Refresh</button>
+    <span class="record-count" id="recordCount"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Plan</th>
+          <th>Goal</th>
+          <th>Experience</th>
+          <th>Joined</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="signupsBody">
+        <tr class="empty-row"><td colspan="9">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination" id="pagination"></div>
+
+  <!-- GOALS CHART -->
+  <div class="goals-section">
+    <div class="section-title">Signups by Goal</div>
+    <div class="goals-grid" id="goalsGrid">
+      <p style="color:var(--gray);font-size:0.85rem">Loading…</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- Loader -->
+<div class="loader" id="loader"><div class="spinner"></div></div>
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ────────────────────────────────────────────────────────────────────
+  let currentPage = 1;
+  const PAGE_SIZE = 15;
+  let searchTimer = null;
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+
+  function showToast(msg, isError = false) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '') + ' show';
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function setLoading(on) {
+    $('loader').classList.toggle('show', on);
+  }
+
+  function planChip(plan) {
+    if (!plan) return '—';
+    if (plan.includes('Starter'))     return `<span class="plan-chip starter">Starter</span>`;
+    if (plan.includes('Performance')) return `<span class="plan-chip performance">Performance</span>`;
+    if (plan.includes('Elite'))       return `<span class="plan-chip elite">Elite</span>`;
+    return plan;
+  }
+
+  function formatDate(str) {
+    if (!str) return '—';
+    const d = new Date(str);
+    return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  }
+
+  // ── Fetch Stats ───────────────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const res = await fetch('/api/stats');
+      const json = await res.json();
+      if (!json.success) throw new Error();
+      const t = json.data.totals;
+      $('sTotal').textContent  = t.total_signups  ?? 0;
+      $('sToday').textContent  = t.today          ?? 0;
+      $('s7d').textContent     = t.last_7_days    ?? 0;
+      $('s30d').textContent    = t.last_30_days   ?? 0;
+      $('sPlanS').textContent  = t.plan_starter    ?? 0;
+      $('sPlanP').textContent  = t.plan_performance ?? 0;
+      $('sPlanE').textContent  = t.plan_elite      ?? 0;
+
+      // Goals bar chart
+      const goals = json.data.goals;
+      const maxCount = goals.length ? Math.max(...goals.map(g => g.count)) : 1;
+      $('goalsGrid').innerHTML = goals.length
+        ? goals.map(g => `
+            <div class="goal-row">
+              <div class="goal-label">${g.goal}</div>
+              <div class="goal-bar-wrap">
+                <div class="goal-bar" style="width:${Math.round((g.count/maxCount)*100)}%"></div>
+              </div>
+              <div class="goal-count">${g.count}</div>
+            </div>`).join('')
+        : '<p style="color:var(--gray);font-size:0.85rem">No data yet.</p>';
+
+    } catch {
+      // Stats failure is silent — table is more important
+    }
+  }
+
+  // ── Fetch Signups ─────────────────────────────────────────────────────────────
+  async function loadSignups(page = 1) {
+    setLoading(true);
+    const search = $('searchInput').value.trim();
+    const plan   = $('planFilter').value;
+
+    const params = new URLSearchParams({ page, limit: PAGE_SIZE });
+    if (search) params.set('search', search);
+    if (plan)   params.set('plan', plan);
+
+    try {
+      const res  = await fetch(`/api/signups?${params}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+
+      renderTable(json.data);
+      renderPagination(json.pagination);
+      $('recordCount').textContent = `${json.pagination.total} total record${json.pagination.total !== 1 ? 's' : ''}`;
+      currentPage = page;
+    } catch (err) {
+      showToast('Failed to load signups. ' + (err.message || ''), true);
+      $('signupsBody').innerHTML = `<tr class="empty-row"><td colspan="9">Error loading data.</td></tr>`;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderTable(rows) {
+    const tbody = $('signupsBody');
+    if (!rows.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="9">No signups found.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.id}</td>
+        <td class="name-cell">${esc(r.first_name)} ${esc(r.last_name)}</td>
+        <td class="email-cell">${esc(r.email)}</td>
+        <td style="color:var(--gray);font-size:0.82rem">${r.phone ? esc(r.phone) : '—'}</td>
+        <td>${planChip(r.plan)}</td>
+        <td style="font-size:0.82rem;color:var(--gray);max-width:160px">${esc(r.goal)}</td>
+        <td style="font-size:0.82rem;color:var(--gray)">${esc(r.experience)}</td>
+        <td class="date-cell">${formatDate(r.created_at)}</td>
+        <td><button class="btn-delete" data-id="${r.id}">Delete</button></td>
+      </tr>`).join('');
+
+    // Attach delete handlers
+    tbody.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', () => deleteSignup(btn.dataset.id));
+    });
+  }
+
+  function renderPagination({ page, pages }) {
+    const wrap = $('pagination');
+    if (pages <= 1) { wrap.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" ${page <= 1 ? 'disabled' : ''} data-p="${page - 1}">‹ Prev</button>`;
+    const start = Math.max(1, page - 2), end = Math.min(pages, page + 2);
+    if (start > 1) html += `<button class="page-btn" data-p="1">1</button>${start > 2 ? '<span class="page-info">…</span>' : ''}`;
+    for (let p = start; p <= end; p++) {
+      html += `<button class="page-btn ${p === page ? 'active' : ''}" data-p="${p}">${p}</button>`;
+    }
+    if (end < pages) html += `${end < pages - 1 ? '<span class="page-info">…</span>' : ''}<button class="page-btn" data-p="${pages}">${pages}</button>`;
+    html += `<button class="page-btn" ${page >= pages ? 'disabled' : ''} data-p="${page + 1}">Next ›</button>`;
+
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('.page-btn:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => loadSignups(Number(btn.dataset.p)));
+    });
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────────
+  async function deleteSignup(id) {
+    if (!confirm(`Delete signup #${id}? This cannot be undone.`)) return;
+    setLoading(true);
+    try {
+      const res  = await fetch(`/api/signups/${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+      showToast(`Signup #${id} deleted.`);
+      loadSignups(currentPage);
+      loadStats();
+    } catch (err) {
+      showToast('Delete failed: ' + (err.message || ''), true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── XSS helper ────────────────────────────────────────────────────────────────
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────────
+  $('btnRefresh').addEventListener('click', () => { loadStats(); loadSignups(1); });
+  $('planFilter').addEventListener('change', () => loadSignups(1));
+  $('searchInput').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadSignups(1), 400);
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  loadStats();
+  loadSignups(1);
+</script>
+
+</body>
+</html>
